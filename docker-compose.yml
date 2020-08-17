@@ -31,6 +31,9 @@ services:
     restart: unless-stopped
     container_name: go_4_nginx
     tty: true
+    environment:
+      - GO_PATH=devops_4_app
+      - GO_PORT=8000
     ports:
       - "8080:80"
     depends_on:
