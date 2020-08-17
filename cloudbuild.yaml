@@ -20,7 +20,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/hello_web:${_IMAGE_VERSION}'
       - '-f'
-      - '.docker/Dockerfile'
+      - '.docker/go/Dockerfile'
       - '--target'
       - 'prod'
       - '.'
