@@ -1,0 +1,83 @@
+version: "3.7"
+services:
+
+  #GO
+  devops_4_app:
+    build:
+      context: .
+      dockerfile: ./.docker/go/Dockerfile
+      target: prod
+    image: yurikoster1/hello_go
+    depends_on:
+      - "devops_4_app-database"
+    networks:
+      - devops_4_app-network
+    restart: unless-stopped
+    container_name: go_4_app
+    ports:
+      - "8000:8000"
+    labels:
+      yuri.project.name: ${COMPOSE_PROJECT_NAME}
+
+  #NIGNX
+  devops_4_nginx:
+    build:
+      context: .docker/nginx
+      dockerfile: Dockerfile
+    entrypoint: " dockerize -wait http://devops_4_app:8000 -timeout 40s /docker-entrypoint.sh"
+    command: ["nginx", "-g", "daemon off;"]
+    networks:
+      - devops_4_app-network
+    restart: unless-stopped
+    container_name: go_4_nginx
+    tty: true
+    ports:
+      - "8080:80"
+    depends_on:
+      - "devops_4_app"
+    volumes:
+      - ./.docker/nginx/templates:/etc/nginx/templates
+      - ./www:/usr/share/nginx/html
+    labels:
+      yuri.project.name: ${COMPOSE_PROJECT_NAME}
+
+
+
+  # Banco de Dados
+  devops_4_app-database:
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: ${COMPOSE_PROJECT_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: ${MYSQL_DOCKER_PASSWORD}
+    networks:
+      - devops_4_app-network
+    restart: unless-stopped
+    container_name: go_4_mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - devops_4_dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+    labels:
+      yuri.project.name: ${COMPOSE_PROJECT_NAME}
+
+networks:
+  devops_4_app-network:
+    driver: bridge
+    labels:
+     yuri.project.name: ${COMPOSE_PROJECT_NAME}
+
+volumes:
+  devops_4_dbdata:
+    driver: local
+    driver_opts:
+        type: none
+        o: bind
+        device: "${PWD}/.docker/mysql/data"
+    labels:
+      yuri.project.name: ${COMPOSE_PROJECT_NAME}
